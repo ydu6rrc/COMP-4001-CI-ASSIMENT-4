@@ -1,0 +1,42 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  # eurolinux box only have amd64, my mac is M chip so use bento arm64 one (still centos stream 9)
+  config.vm.box = "bento/centos-stream-9"
+  config.vm.hostname = "yupengdu"
+  config.vm.network "private_network", ip: "192.168.56.58"
+  config.vm.network "forwarded_port", guest: 3000, host: 3000
+  config.vm.network "forwarded_port", guest: 5090, host: 5090
+
+  config.vm.provider "parallels" do |prl|
+    prl.memory = "2048"
+    prl.cpus = 2
+  end
+
+  config.vm.provision "shell", inline: <<-SHELL
+    # Update system and install prerequisites
+    sudo dnf update -y
+    sudo dnf install -y yum-utils git curl
+
+    # Install Docker (official method for CentOS Stream 9)
+    sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+    sudo dnf install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+    sudo systemctl start docker
+    sudo systemctl enable docker
+    sudo usermod -aG docker vagrant
+
+    # clone my repo, delete old one first otherwise git clone fail when provision again
+    cd /home/vagrant
+    rm -rf devops-sprints
+    mkdir devops-sprints
+    cd devops-sprints
+    git clone https://github.com/ydu6rrc/COMP-4001-CI-ASSIMENT-4.git
+    chown -R vagrant:vagrant /home/vagrant/devops-sprints
+
+    # build and run both containers
+    cd COMP-4001-CI-ASSIMENT-4
+    sudo docker compose up -d --build
+    sudo docker ps
+  SHELL
+end

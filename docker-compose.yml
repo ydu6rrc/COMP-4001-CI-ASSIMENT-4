@@ -1,0 +1,23 @@
+# sprint 1B, same thing as the manual docker build / docker run but in one file
+services:
+  studentportfolio:
+    build: ./Studentportfoliotemplate
+    container_name: studentportfolio
+    ports:
+      - "3000:80"
+    networks:
+      - prf-network
+    restart: always
+
+  bankingapp:
+    build: ./BankingApp
+    container_name: bankingapp
+    ports:
+      - "5090:5090"
+    networks:
+      - prf-network
+    restart: always
+
+networks:
+  prf-network:
+    name: prf-network
